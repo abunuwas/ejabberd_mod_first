@@ -1,0 +1,131 @@
+EJABBERD MODULE EXTENSION PRINCIPLES
+====================================
+
+- ~/.ejabberd-modules/ => .spec files
+- ~/.ejabberd-modules/sources => source code
+- Structure of ~/.ejabberd-modules/sources/mod_<module_name>/
+	/lib => elixir source code
+	/src => erlang source code
+	README
+	README.md
+	COPYING => copyright note
+	Makefile => if you want a from-the-module build
+
+
+1) sudo mkdir ~/.ejabberd-modules/sources/mod_<module_name>
+
+2) sudo touch ~/.ejabberd-modules/mod_<module_name>/mod_<module_name>.spec
+
+3) sudo touch ~/.ejabberd-modules/sources/mod_<module_name>/mod_<module_name>.spec %% For some reason is is necessary to make Ejabberd aware that the new module is available
+
+3) Fill the .spec file with contents like the following:
+
+author: "Jose Haro <joseharoperalta at gmail.com>"
+category: "http"
+summary: "Monitoring Hook for Ejabberd"
+home: "https://github.com/abunuwas/mod_hello_world/tree/master/"
+url: "git@github.com:jadahl/mod_restful.git"
+
+4) This should make the module already visible to ejabberd:
+
+sudo ejabberdctl modules_update_specs => makes ejabberd aware of the module
+sudo ejabberdctl modules_available => should list the module
+sudo ejabberdctl module_check mod_<module_name> => says if it's available
+sudo ejabberdctl module_install mod_<module_name> => installs the module
+
+5) sudo touch ~/.ejabberd-modules/sources/mod_<module_name>/src/mod_<module_name>.erl
+
+Fill the file with contents like the following:
+-module(mod_hello_world).
+
+%% Required by ?INFO_MSG macrosls
+-include("logger.hrl").
+
+%%-behaviour(gen_mod).
+
+%% gen_mod API callbacks
+-export([start/2, stop/1]).
+
+-ifndef(LAGER).
+-define(LAGER, 1).
+-endif.
+
+start(_Host, _Opt) -> 
+    ?INFO_MSG("Hello, ejabberd world!", []),
+    ok.
+
+stop(_Host) -> 
+    ?INFO_MSG("Bye bye, ejabberd world!", []),
+    ok. 
+    
+6) sudo mkdir ~/.ejabberd-modules/sources/mod_<module_name>/ebin
+
+7) sudo touch ~/.ejabberd-modules/sources/mod_<module_name>/ebin/mod_<module_name>.beam
+
+8) Go to root directory of the source module:
+cd ~/.ejabberd-modules/sources/mod_<module_name>
+
+9) COMPILE:
+
+sudo erlc -I /lib/ejabberd-16.06.58/include -o ebin src/mod_hello_world.erl
+
+10) Include the beam file in the ejabberd lib:
+
+cd /lib/ejabberd-16.06.26/ebin
+sudo ln -s ~/.ejabberd-modules/sources/mod_hello_world/ebin/mod_hello_world.beam
+
+11) To test the module, load from the command line:
+
+sudo ejabberdctl stop %% if it is running
+sudo ejabberdctl live %% start with a shell session
+
+$ gen_mod:start_module(<<"localhost">>, mod_hello_world, []). %% this should initialize the module
+
+Stop the module:
+
+$ gen_mod:stop_module(<<"localhost">>, mod_hello_world).
+
+
+12) Alternatively, we can include the module in ejabberd.yml and have it automatically
+    initialized on ejabberd startup. 
+
+
+THE FOLLOWING DEPENDENCIES MIGHT HAVE TO BE INSTALLED DURING THE PROCESS:
+========================================================================
+
+cd /tmp
+
+REABAR:
+git clone git://github.com/rebar/rebar.git
+cd rebar
+sudo ./bootstrap 
+sudo cp rebar /bin/
+
+FAST_XML:
+git clone https://github.com/processone/fast_xml.git
+cd fast_xml/
+sudo ./configure && make
+rebar compile
+sudo cp -r fast_xml /usr/lib/erlang/lib/
+
+RESOURCES
+=========
+
+https://www.ejabberd.im/development
+http://anders.conbere.org/2008/07/16/building_ejabberd_modules_-_part_1_-_compiling_erlang.html
+http://anders.conbere.org/2008/07/17/building_ejabberd_modules_-_part_2_-_generic_modules.html
+http://anders.conbere.org/2008/07/31/building_ejabberd_modules_-_part_3_-_http_modules.html
+http://anders.conbere.org/2008/08/06/building_ejabberd_modules_-_part_4_-_xmpp_bots.html
+http://happy.cat/blog/XMPP-Bots-ejabberd-mod-motion-2010-02-01-10-00.html
+https://blog.process-one.net/easy-installer-and-structure-for-ejabberd-contributed-modules/
+https://metajack.im/2008/08/28/writing-ejabberd-modules-presence-storms/
+https://docs.ejabberd.im/developer/modules/
+https://docs.ejabberd.im/developer/hooks/
+
+https://pragprog.com/titles/jaerlang/programming-erlang
+http://shop.oreilly.com/product/0636920025818.do
+http://shop.oreilly.com/product/0636920030584.do?green=C0C3E716-3145-5C28-BB69-964912C7DB21&intcmp=af-mybuy-0636920030584.IP
+http://shop.oreilly.com/product/0636920024149.do?green=C0C3E716-3145-5C28-BB69-964912C7DB21&intcmp=af-mybuy-0636920024149.IP
+http://shop.oreilly.com/product/0636920040385.do?green=C0C3E716-3145-5C28-BB69-964912C7DB21&intcmp=af-mybuy-0636920040385.IP
+http://shop.oreilly.com/product/9780596518189.do?green=C0C3E716-3145-5C28-BB69-964912C7DB21&intcmp=af-mybuy-9780596518189.IP
+http://www.r-5.org/files/books/computers/languages/erlang/Simon_St_Laurent-Introducing_Erlang-EN.pdf
