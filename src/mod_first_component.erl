@@ -15,14 +15,14 @@
 	get_pids_sitems/1,
 	get_pids_socket_data/1,
 	get_pids_sockets/1,
-	get_ips_ports_from_sockets/1]).
+	get_ips_ports_from_sockets/1,
+	get_list_pids_ports/1]).
 
 -ifndef(LAGER).
 -define(LAGER, 1).
 -endif.
 
 -record(route, {domain, server_host, pid, local_hint}).
--record(pid_port, {pid, port}).
 
 start(_Host, _Opt) -> 
     ?INFO_MSG("Hello, ejabberd world!", []),
@@ -91,6 +91,15 @@ get_ip_port_from_socket({Pid, Socket}) ->
 get_ips_ports_from_sockets(Sockets) ->
     IPs_Ports = [get_ip_port_from_socket(Socket) || Socket <- Sockets, (Socket /= none)],
     IPs_Ports.
+
+get_list_pids_ports(Domain) ->
+	Pids = get_pids_from_domain(Domain),
+	Pids_Infos = get_pids_info(Pids),
+	SItems = get_pids_sitems(Pids_Infos),
+	SocketsData = get_pids_socket_data(SItems),
+	Sockets = get_pids_sockets(SocketsData),
+	Ips_Ports = get_ips_ports_from_sockets(Sockets),
+	Ips_Ports.
 
 % {_, _, _, Pid_data} = Pid_info.
 
